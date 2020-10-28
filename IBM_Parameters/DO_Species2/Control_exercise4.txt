@@ -1,0 +1,25 @@
+PatchModel	0
+Resolution	100
+LandType	2
+MaxHabitats	1
+SpeciesDist	0
+DistResolution	100
+Reproduction	1
+RepSeasons	1
+StageStruct	1
+Stages	3
+Transfer	0
+ParameterFile	ParameterFile_ex4.txt
+LandFile	landfile.txt
+StageStructFile StageStructFile_ex4.txt
+EmigrationFile	EmigrationFile_ex4.txt
+TransferFile	TransferFile_ex4.txt
+SettlementFile	SettlementFile_ex4.txt
+InitialisationFile	InitialisationFile_ex4.txt
+
+ANY ADDITIONAL LINES ARE NOT READ, AND CAN THEREFORE BE USED FOR COMMENTS
+
+Control file for RangeShifter Tutorial Example 4, estimating connectivity
+
+Patch-based landscape, stage-structured population, transfer by the Stochastic Movement Simulator (SMS)
+

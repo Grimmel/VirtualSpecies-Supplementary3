@@ -1,0 +1,3 @@
+Simulation	StageDep	SexDep	KernelType	DistMort	IndVar	Evolving	Stage	Sex	meanDistI	meanDistII	ProbKernelI	minDistI	maxDistI	minDistII	maxDistII	minProbKernelI	maxProbKernelI	mutationP	distI_mutSize	distII_mutSize	ProbKernelI_mutSize	MortProb	Slope	InflPoint
+1	0	0	0	1	0	0	0	0	200	1500	0.8	-9	-9	-9	-9	-9	-9	-9	-9	-9	-9	-9	0.0049	800
+2	0	0	0	1	0	0	0	0	200	1500	0.8	-9	-9	-9	-9	-9	-9	-9	-9	-9	-9	-9	0.0049	800

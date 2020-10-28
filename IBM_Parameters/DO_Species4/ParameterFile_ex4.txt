@@ -1,0 +1,3 @@
+Simulation	Replicates	Years	Gradient	GradSteep	Optimum	f	LocalExtOpt	Shifting	ShiftRate	ShiftStart	ShiftEnd	EnvStoch	EnvStochType	ac	std	minR	maxR	minK	maxK	LocalExt	LocalExtProb	PropMales	Harem	bc	Rmax	K1	OutputRange	OutputOccupancy	OutputPopulations	OutputIndividuals	OutputTraitsXCell	OutputTraitsXRow	ConnectivityMatrix	OutputInterval	ConnectInterval	SaveMaps	MapsInterval	DrawLoadedSp
+1	10	600	0	-9	-9	-9	-9	-9	-9	-9	-9	1	0	0.7	0.2	0.05	0.35	-9	-9	0	-9	0.5	-9	-9	-9	15	0	1	1	0	0	0	0	100	0	0	0	0
+2	10	600	0	-9	-9	-9	-9	-9	-9	-9	-9	0	0	-9	-9	-9	-9	-9	-9	0	-9	0.5	-9	-9	-9	15	0	1	1	0	0	0	0	100	0	0	0	0

@@ -1,0 +1,288 @@
+---
+title: "Simulated species response to suitability gradient"
+output:
+  html_notebook:
+    code_folding: hide
+---
+
+```{r  message=FALSE, warning=FALSE}
+
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+library(reshape2)
+setwd("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial/Supplementary_3")
+
+prevdat75 <- read.csv("data/prevalence_75.csv")
+prevdat85 <- read.csv("data/prevalence_85.csv")
+landscape75 <- read.csv("data/landscape_metrics75.csv")
+landscape85 <- read.csv("data/landscape_metrics85.csv")
+cor_species <- read.csv("data/all_lr_results.csv")
+cor_species$lsn <- paste(cor_species$ls,cor_species$lsrep,sep="")
+cor_species$sim_id <- paste(cor_species$species,cor_species$ls,cor_species$lsrep,cor_species$sim,cor_species$simrep,sep="")
+cor_species$manhat_dist <- rowSums(cor_species[7:16])
+cor_species <- cor_species %>% full_join(prevdat75[c(1,8,9,10)],by=c("sim_id"="id")) 
+cor_species75 <- cor_species %>% full_join(landscape75,by=c("lsn"="ls"))
+cor_species85 <- cor_species %>% full_join(prevdat85[c(1,8,9,10)],by=c("sim_id"="id")) 
+cor_species85 <- cor_species %>% full_join(landscape85,by=c("lsn"="ls"))
+
+dat <- read.csv("data/raw_structure.csv")
+dat$break_pt <- dat$break_pt*5
+dat$abun_prop <- dat$abun_sum/dat$suit_freq
+theme_Publication <- function(base_size=14, base_family="Arial") {
+      library(grid)
+      library(ggthemes)
+      (theme_foundation(base_size=base_size, base_family=base_family)
+       + theme(plot.title = element_text(face = "bold",
+                                         size = rel(1.4)),
+               text = element_text(),
+               panel.background = element_rect(colour = NA),
+               plot.background = element_rect(colour = NA),
+               panel.border = element_rect(colour = NA),
+               axis.title = element_text(,size = rel(1)),
+               axis.title.y = element_text(angle=90,vjust =2),
+               axis.title.x = element_text(vjust = -0.2),
+               axis.text = element_text(), 
+               axis.line = element_line(colour="black"),
+               axis.ticks = element_line(),
+               panel.grid.major = element_line(colour="#f0f0f0"),
+               panel.grid.minor = element_blank(),
+               legend.key = element_rect(colour = NA),
+               #legend.position = "bottom",
+               #legend.direction = "horizontal",
+               #legend.key.size= unit(1, "cm"),
+               #legend.margin = unit(0, "cm"),
+               legend.title = element_text(face="italic"),
+               #plot.margin=unit(c(10,5,5,5),"mm"),
+               strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+          ))
+      
+}
+```
+# Measured species response
+When evaluating the median proportion of cells occupied along the suitability gradient, curves tend to have a sigmoidal shape. Probabilistic species (EO) have very little variability around this shape, while simulations with dispersal and popultion (DP) have comparatively high variability. Dispersal only (DO) simulations have moderate variabilty.
+```{r message=FALSE, warning=FALSE, fig.width=10,fig.height=13}
+m <- dat %>% 
+  group_by(species,break_pt) %>%
+  summarise_at(vars(pa_prop), funs(median(., na.rm=TRUE)))
+mQuant <- dat %>% 
+  group_by(species,break_pt) %>%
+  summarise(Q1=quantile (pa_prop, probs=0.25), Q2=quantile (pa_prop, probs=0.50), Q3=quantile(pa_prop, probs=0.75))
+m <- as.data.frame(m)
+mQuant <- as.data.frame(mQuant)
+m <- cbind(m,mQuant$Q1,mQuant$Q3)
+names(m) <- c('species','break_pt','pa_prop','Q1','Q3')
+p1 <- ggplot(data=m[m$species %in% c('EO_Species1','EO_Species2','DO_Species1','DO_Species2','DO_Species3','DO_Species4'),], aes(x=break_pt, y=pa_prop, group=species)) +
+  geom_line(aes(color=species,linetype=species),size=1)+
+  geom_ribbon(aes(ymin = Q1, ymax = Q3,fill=species),alpha=0.3,linetype='solid')+
+  scale_linetype_manual(values=c("solid","solid","solid","solid","dashed","dotted"))+
+  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
+  scale_fill_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
+  xlab('Habitat suitability')+
+  ylab('Proportion of occurence')+ylim(0,1)+ ggtitle("CA Species")+theme_Publication()+theme_Publication()+theme(plot.title = element_text(hjust = 0.01))
+p3 <- ggplot(data=m[m$species %in% c('DP_Species1','DP_Species2','DP_Species3','DP_Species4'),], aes(x=break_pt, y=pa_prop, group=species)) +
+  geom_line(aes(color=species),size=1)+
+  geom_ribbon(aes(ymin = Q1, ymax = Q3,fill=species),alpha=0.3,linetype='solid')+
+  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7"))+
+  scale_fill_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7"))+
+  xlab('Habitat suitability')+
+  ylab('Proportion of occurence')+ylim(0,1) + ggtitle("IBM Species")+theme_Publication()+theme(plot.title = element_text(hjust = 0.01))
+
+plotout <- ggarrange(p1,p3,common.legend=FALSE,ncol=1)
+plotout
+```
+## Between landscape variability
+By plotting the average curve for each landscape we can get another view about how the measured response changes between landscape. Landscapes with larger mean patch size (area_mn) tended to have higher proportions of occurence along the middle ranges of the suitability gradient for DP and to a lesser extent DO species. As expected, there is no change for EO species. The low fecundity species (DP_species 3&4) tend to have greater variability between landscapes in the high suitability values compared to the high fecundity species.
+```{r message=FALSE, warning=FALSE,fig.width = 10, fig.height=15}
+dat2 <- dat %>% full_join(landscape75,by=c("ls"="ls"))
+m <- dat2 %>% 
+  group_by(species,break_pt,ls,area_mn) %>%
+  summarise_at(vars(pa_prop), funs(mean(., na.rm=TRUE)))
+p <- ggplot(data=m, aes(x=break_pt, y=pa_prop, group=ls)) +
+  geom_line(aes(color=area_mn))+  scale_color_gradientn(colours = rainbow(5))
+p + facet_wrap(vars(species),ncol=2) + xlab("Habitat suitability") + ylab("Proportion of occurence")+theme_Publication()
+
+```
+# Modelled response
+This response was quantified by using a logistic regression model to describe the response to suitability. The response is then describe by two values, the intercept and suitability coefficients.  As the intercept decreases, the point of inflexion of the curve shifts along the x-axis, away from y-axis. As the suitability coefficient increases, the slope of the inflexion point increases.
+```{r message=FALSE, warning=FALSE, fig.width=10,fig.height=6}
+lr <- function(int,beta,x){
+ return (exp(int+(beta*x))/(1+exp(int+(beta*x))))
+}
+testLog <- data.frame(x=seq(0,100,1))
+names(testLog)<- c('x')
+int = -3
+suit = 0.1
+testLog$b1 <- lr(int,0.07,testLog$x)
+testLog$b2 <- lr(int,0.1,testLog$x)
+testLog$b3 <- lr(int,0.15,testLog$x)
+testLog$b4 <- lr(-8,0.07,testLog$x)
+testLog$b5 <- lr(-8,0.1,testLog$x)
+testLog$b6 <- lr(-8,0.15,testLog$x)
+
+ggplot(data=testLog)+
+  geom_line(aes(x=x,y=b1,colour = "c1",linetype="l1"),size=1.2)+
+  geom_line(aes(x=x,y=b2,colour = "c2",linetype="l1"),size=1.2)+
+  geom_line(aes(x=x,y=b3,colour = "c3",linetype="l1"),size=1.2)+
+  geom_line(aes(x=x,y=b4,colour = "c1",linetype="l2"),size=1.2)+
+  geom_line(aes(x=x,y=b5,colour = "c2",linetype="l2"),size=1.2)+
+  geom_line(aes(x=x,y=b6,colour = "c3",linetype="l2"),size=1.2)+xlab("Habitat suitability")+ylab("Probability occurence")+
+  scale_color_manual(name = "Suitability coefficients",
+                     breaks=c("c1","c2","c3"),
+                     values=c("c1"="#D55E00","c2"="#0072B2","c3"="#009E73"),
+                       labels = c("B=0.07", "B=0.10","B=0.15"))+theme_Publication()+theme(legend.position = "bottom")+
+  scale_linetype_manual(name="Intercept",
+                     breaks=c("l1","l2"),
+                     values=c("l1"="solid","l2" = "dotdash"),
+                     labels=c("-3","-8"))
+```
+This function is used to store the modelled response in a csv file so that they can be plot in the same manner the measured response was.
+```{r fig.width=10,fig.height=6}
+df <- data.frame(matrix(ncol=8,nrow=0))
+for (i in seq(1,nrow(cor_species),1)){
+
+  x<-seq(0,100,1)
+  Y <- as.data.frame(lr(cor_species75[i,]$int,cor_species75[i,]$suit,x))
+  Y$x <- x
+  Y$species = cor_species75[i,]$species
+  Y$ls = cor_species75[i,]$ls
+  Y$lrep <- cor_species75[i,]$lsrep
+  Y$srep <- cor_species75[i,]$simrep
+  Y$area <-cor_species75[i,]$area_mn
+  Y$lsi <- cor_species75[i,]$lsi
+  Y$con <- cor_species75[i,]$con_mn
+  names(Y) <- c('y','x')
+  df <- rbind(df,Y)
+}
+write.csv("regression_curves.csv")
+```
+
+By aggregating the modelled response curves it is clear the modelled response is very similar to the measured response. This means that looking at changes to regression coefficients are a reliable measure of changes in the species response.
+```{r message=FALSE, warning=FALSE, fig.width=10,fig.height=13}
+regCurves <- read.csv("regression_curves.csv")
+m <- regCurves %>% 
+  group_by(species,x) %>%
+  summarise_at(vars(y), funs(median(., na.rm=TRUE)))
+mQuant <- regCurves %>% 
+  group_by(species,x) %>%
+  summarise(Q1=quantile (y, probs=0.25), Q2=quantile (y, probs=0.50), Q3=quantile(y, probs=0.75))
+m <- as.data.frame(m)
+mQuant <- as.data.frame(mQuant)
+m <- cbind(m,mQuant$Q1,mQuant$Q3)
+names(m) <- c('species','x','y','Q1','Q3')
+p1 <- ggplot(data=m[m$species %in% c('EO_Species1','EO_Species2','DO_Species1','DO_Species2','DO_Species3','DO_Species4'),], aes(x=x, y=y, group=species)) +
+  geom_line(aes(color=species,linetype=species),size=1)+
+  geom_ribbon(aes(ymin = Q1, ymax = Q3,fill=species),alpha=0.3,linetype='solid')+
+  scale_linetype_manual(values=c("solid","solid","solid","solid","dashed","dotted"))+
+  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
+  scale_fill_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
+  xlab('Habitat suitability')+
+  ylab('Probability of occurence')+ylim(0,1)+ ggtitle("CA Species")+theme_Publication()+theme_Publication()+theme(plot.title = element_text(hjust = 0.01))
+p2 <- ggplot(data=m[m$species %in% c('DP_Species1','DP_Species2','DP_Species3','DP_Species4'),], aes(x=x, y=y, group=species)) +
+  geom_line(aes(color=species),size=1)+
+  geom_ribbon(aes(ymin = Q1, ymax = Q3,fill=species),alpha=0.3,linetype='solid')+
+  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7"))+
+  scale_fill_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7"))+
+  xlab('Habitat suitability')+
+  ylab('Probability of occurence')+ylim(0,1) + ggtitle("IBM Species")+theme_Publication()+theme(plot.title = element_text(hjust = 0.01))
+
+plotout <- ggarrange(p1,p2,common.legend=FALSE,ncol=1)
+plotout
+```
+The same is true when the responses are plot for each individual landscape.
+```{r message=FALSE, warning=FALSE, fig.width = 10, fig.height=15}
+regCurves$lsn <- regCurves$ls+regCurves$lrep+regCurves$srep
+m <- regCurves %>% 
+  group_by(species,x,ls,area_mn) %>%
+  summarise_at(vars(y), funs(mean(., na.rm=TRUE)))
+p <- ggplot(data=m, aes(x=x, y=y, group=area_mn)) +
+  geom_line(aes(color=area_mn))+  scale_color_gradientn(colours = rainbow(5))
+p+ facet_wrap(vars(species),ncol=2)+theme_Publication()+xlab("Habitat suitability")+ylab("Probability of occurence")+ labs(colour='Mean area') 
+```
+# Changes to suitability coefficients
+Both intercept and suitability coefficients are much more variable for DP species than EO and DO, with clear differences between landscape categories.
+```{r message=FALSE, warning=FALSE, fig.width = 10, fig.height=6}
+ggplot(cor_species, aes(x=species, y=int,fill = ls)) + 
+  geom_boxplot(notch=FALSE,outlier.shape = NA)+ ylab("Intercept coefficient")+xlab("Species")+theme_Publication()+theme(panel.grid.major = element_blank())+labs(fill = 'Landscape')+ theme(axis.text.x = element_text(angle = 30, vjust = 1, hjust=1),legend.position = "bottom")#+ylim(c(0,0.2))
+ggplot(cor_species, aes(x=species, y=suit,fill = ls)) + 
+  geom_boxplot(notch=FALSE,outlier.shape = NA)+ ylab("Suitability coefficient")+xlab("Species")+theme_Publication()+theme(panel.grid.major = element_blank())+labs(fill = 'Landscape')+ylim(c(0,0.2))+ theme(axis.text.x = element_text(angle = 30, vjust = 1, hjust=1),legend.position = "bottom")
+```
+When assessing the explanatory power of landscape metrics on coefficients analyses indicated that mean patch contiguity had the greatest effect size and explanatory power for DP simulations on suitability coefficients. For DO and EO simulations, landscape shape index and mean patch area had greater explanatory power respectively. However, their standardised coefficients were much smaller due less variation in suitability coefficients. These relationships were consistent whether using high suitability or very high suitability patches. Patterns were the same for intercept values, except LSI had greater explanatory power when using high suitability patches.
+```{r message=FALSE, warning=FALSE}
+library(kableExtra)
+library(relaimpo)
+makeTable <- function(inData,coef,title){
+  results <- NA
+  for(spi in c('EO_Species1','EO_Species2','DO_Species1','DO_Species2','DO_Species3','DO_Species4','DP_Species1','DP_Species2','DP_Species3','DP_Species4')){
+      m1 <- NA
+      if (coef == 'suit'){
+        m1 <- glm(suit~scale(con_mn)+scale(area_mn)+scale(lsi),data=inData[(inData$species==spi),])
+      }else if(coef =='int'){
+        m1 <- glm(int~scale(con_mn)+scale(area_mn)+scale(lsi),data=inData[(inData$species==spi),])
+      }else if(coef =='moran'){
+        m1 <- glm(manhat_dist~scale(con_mn)+scale(area_mn)+scale(lsi),data=inData[(inData$species==spi),])
+      }
+      
+      
+      imp <- calc.relimp(m1)
+      
+      r2 <- imp@R2.decomp
+      impCon <- imp@lmg[[1]]
+      impArea <- imp@lmg[[2]]
+      impLSI <-imp@lmg[[3]]
+      coefCon <- m1$coefficients[[2]]
+      coefArea <- m1$coefficients[[3]]
+      coefLSI <- m1$coefficients[[4]]
+      if(is.na(results)){
+        results <- data.frame(species=spi,r2=r2,conImp=impCon,areaImp=impArea,lsiImp=impLSI,con=coefCon,area=coefArea,lsi=coefLSI)
+      } else {
+        results <- rbind(results,results <- data.frame(species=spi,r2=r2,conImp=impCon,areaImp=impArea,lsiImp=impLSI,con=coefCon,area=coefArea,lsi=coefLSI))
+      }
+  }
+
+  kable(results,caption = title)%>%
+    kable_styling(bootstrap_options = "striped", full_width = F) %>%
+    column_spec(1, bold = T, border_right = T)
+}
+makeTable(cor_species75,'suit','Suitability coefficient, high suitability patches')
+makeTable(cor_species85,'suit','Suitability coefficient, very high suitability patches')
+```
+```{r message=FALSE, warning=FALSE}
+makeTable(cor_species75,'int','Intercept, high suitability patches')
+makeTable(cor_species85,'int','Intercept coefficient, very high suitability patches')
+```
+# Residual spatial autocorrelation
+Probabilistic simulations exhibit no spatial autocorrelation in either regression model residuals. All DP species exhibited some degree of residual spatial autocorrelation, but it was strongest in the high fecundity species. 
+```{r message=FALSE, warning=FALSE, fig.width = 10, fig.height=9}
+m <- cor_species %>%
+  group_by(species) %>%
+  summarise_at(vars('s5','s10','s15','s20','s25','s30','s35','s40','s45','s50'), funs(median(., na.rm=TRUE)))
+m <- melt(m,id.vars="species")
+m2 <- cor_species %>%
+  group_by(species) %>%
+  summarise_at(vars('s5','s10','s15','s20','s25','s30','s35','s40','s45','s50'), funs(sd(., na.rm=TRUE)))
+df2 <- melt(m2,id.vars="species")
+names(m) <- c('species','variable','value')
+ggplot(data=m, aes(x=variable, y=value, group=species)) +
+  geom_line(aes(color=species,linetype=species),position=position_dodge(.2),size=1.1)+
+  geom_point(aes(color=species,shape=species),position=position_dodge(.2),size=2.5) +
+  geom_errorbar(aes(ymin = value - df2$value, ymax = value + df2$value,color=species),width = 1,position=position_dodge(.2),linetype='solid',alpha=0.8)+
+  geom_hline(yintercept=0)+
+  scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","dotted", "dotted"))+
+  scale_shape_manual(values=c(16,16,16,16,17,17,17,17,15,15))+
+  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
+  xlab('Lag distance (Cells)')+
+  ylab("Moran's I")+theme_Publication()+theme(legend.position = "bottom",legend.box="vertical")+
+   guides(linetype = guide_legend(ncol = 4, byrow = TRUE))
+```
+
+While this trend is consistent for all landscapes, the strength of spatial autocorrelation does vary between landscapes.
+```{r message=FALSE, warning=FALSE, fig.width = 10, fig.height=6}
+ggplot(cor_species, aes(x=species, y=manhat_dist,fill = ls)) + 
+  geom_boxplot(notch=FALSE,outlier.shape = NA)+ ylab("Manhattan distance (Moran's I)")+xlab("Species")+theme_Publication()+theme(panel.grid.major = element_blank())+labs(fill = 'Landscape')+ theme(axis.text.x = element_text(angle = 30, vjust = 1, hjust=1),legend.position = "bottom")
+```
+Landscape metrics did not explain the variance in spatial autocorrelation strength as well as regression coefficients, particularly for low fecundity species. When the analysis was performed using high suitability patches, low fecundity species, mean area was the most important metric. For high fecundity species, landscape shape index was more important; all species responded positively to these metrics (Table S4). However, when the analysis used very high suitability patches, landscape shape index became more important for low fecundity species and mean contiguity for high fecundity species.
+```{r message=FALSE, warning=FALSE}
+makeTable(cor_species75,'moran',"Moran's I, high suitability patches")
+makeTable(cor_species85,'moran',"Moran's I, coefficient, very high suitability patches")
+```

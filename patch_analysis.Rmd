@@ -1,0 +1,171 @@
+---
+title: "Simulated species response to suitability gradient"
+output:
+  html_notebook:
+    code_folding: hide
+---
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+setwd("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial/Supplementary_4")
+
+dat <- read.csv("data/patches_measures75.csv")
+dat85 <- read.csv("data/patches_measures85.csv")
+dat$prop_filled <- dat$pa_count/dat$area
+dat85$prop_filled <- dat85$pa_count/dat85$area
+datSmall <- dat[dat$area <=20,]
+datLarge <- dat[dat$area>20,]
+datLarge$cv <- datLarge$mean/datLarge$sd
+theme_Publication <- function(base_size=12, base_family="helvetica") {
+      library(grid)
+      library(ggthemes)
+      (theme_foundation(base_size=base_size, base_family=base_family)
+       + theme(plot.title = element_text(face = "bold",
+                                         size = rel(1.4), hjust = 0.5),
+               text = element_text(),
+               panel.background = element_rect(colour = NA),
+               plot.background = element_rect(colour = NA),
+               panel.border = element_rect(colour = NA),
+               axis.title = element_text(face = "bold",size = rel(1)),
+               axis.title.y = element_text(angle=90,vjust =2),
+               axis.title.x = element_text(vjust = -0.2),
+               axis.text = element_text(), 
+               axis.line = element_line(colour="black"),
+               axis.ticks = element_line(),
+               panel.grid.major = element_line(colour="#f0f0f0"),
+               panel.grid.minor = element_blank(),
+               legend.key = element_rect(colour = NA),
+               legend.position = "bottom",
+               legend.direction = "horizontal",
+               legend.key.size= unit(0.2, "cm"),
+               legend.margin = unit(0, "cm"),
+               legend.title = element_text(face="italic"),
+               plot.margin=unit(c(10,5,5,5),"mm"),
+               strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+          ))
+      
+}
+```
+# Prevalence
+The amount of high suitability habitat varied between landscapes by chance, ranging from 2% – 36% (µ=16%, σ=6%). All species prevalence scaled linearly with the prevalence of high suitability cells, with high fecundity species having a steeper rate of change than other species (Fig S1, S2). However, the relative prevalence varied between species depending on simulation parameters. High fecundity DP species and DO species with high dispersal probability had higher prevalence than simulations with low fecundity and low dispersal probability.  
+```{r message=FALSE, warning=FALSE, fig.width = 12, fig.height=8}
+prevalence75 <- read.csv("data/prevalence_75.csv")
+prevalence85 <- read.csv("data/prevalence_85.csv")
+landscape75 <- read.csv("data/landscape_metrics75.csv")
+landscape85 <- read.csv("data/landscape_metrics85.csv")
+prev_ls75 <- prevalence75 %>% full_join(landscape75,by=c("ls"="ls"))
+prev_ls85 <- prevalence85 %>% full_join(landscape85,by=c("ls"="ls"))
+
+prev_ls75 %>% ggplot(aes(y=prevalence,x=total_area/160000,color=species,linetype=species))+
+  geom_point(aes(color=species,shape=species),size = 1)+
+  geom_smooth(method='lm',se=FALSE,size=1.5)+
+  scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","twodash", "twodash"))+
+  scale_shape_manual(values=c(16,16,16,16,17,17,17,17,15,15))+
+  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
+   ylab("Species prevalence") + xlab("Prevalence of very high suitability (>75)")+theme_Publication()
+```
+```{r message=FALSE, warning=FALSE, fig.width = 12, fig.height=8}
+prev_ls85 %>% ggplot(aes(y=prevalence,x=total_area/160000,color=species,linetype=species))+
+  geom_point(aes(color=species,shape=species),size = 1)+
+  geom_smooth(method='lm',se=FALSE,size=1.5)+
+  scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","twodash", "twodash"))+
+  scale_shape_manual(values=c(16,16,16,16,17,17,17,17,15,15))+
+  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
+   ylab("Species prevalence") + xlab("Prevalence of very high suitability (>85)")+theme_Publication()
+```
+
+# Local extinction
+Probabilistic simulations (EO_Species) had no dependence on patch size, with very low rates of local extinction in the smallest patch size class only. This was primarily driven by single cell patches. Dispersal only simulations did have higher rates of local extinction that decreased with patch size and affected species with low dispersal probability the most. Simulations incorporating dispersal and population had much high rates of local extinction than EO and DO species. Low fecundity species had the highest rates of local extinction, while DP_Species3 (high fecundity & dispersal) had higher rates of local extinction in larger patch size classes compared to other DP species.  
+```{r message=FALSE, warning=FALSE, fig.width = 12, fig.height=10}
+zero <- dat[(dat$pa_count == 0),]
+zero$size <- cut(zero$area,c(0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,160000))
+zero <- zero %>% group_by(species,size) %>% tally()
+patches <- dat[dat$species=='EO_Species1',]      # selecting EO_Species1 is arbitrary. Done to retreive the number of patches x number of simulation replicates
+patches$size <- cut(patches$area,c(0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,160000))
+patches <- patches %>%group_by(size) %>% tally()
+propzero <- zero %>% full_join(patches,by=c('size'='size'))
+barlab <- c(0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,'>100')
+ggplot(propzero)+
+  geom_bar(aes(x=size,y=n.x/n.y),stat="identity")+facet_wrap(vars(species),ncol=2)+
+  scale_x_discrete(labels= barlab)+
+  xlab('Patch area (cells)')+ylab('Proportion of patches unoccupied')+theme_Publication()
+
+```
+These patterns were consistent with very high suitability patches (suitability>85). The main difference being the number and size of patches are smaller due to lower availability of cells >85 compared to >75.
+```{r message=FALSE, warning=FALSE, fig.width = 12, fig.height=10}
+zero <- dat85[(dat85$pa_count == 0),]
+zero$size <- cut(zero$area,c(0,5,10,15,20,25,30,35,40,45,50,160000))
+zero <- zero %>% group_by(species,size) %>% tally()
+patches <- dat85[dat85$species=='EO_Species1',]      # selecting EO_Species1 is arbitrary. Done to retreive the number of patches x number of simulation replicates
+patches$size <- cut(patches$area,c(0,5,10,15,20,25,30,35,40,45,50,160000))
+patches <- patches %>%group_by(size) %>% tally()
+propzero <- zero %>% full_join(patches,by=c('size'='size'))
+barlab <- c(0,5,10,15,20,25,30,35,40,45,'>50')
+ggplot(propzero)+
+  geom_bar(aes(x=size,y=n.x/n.y),stat="identity")+facet_wrap(vars(species),ncol=2)+
+  scale_x_discrete(labels= barlab)+
+  xlab('Patch area (cells)')+ylab('Proportion of patches unoccupied')+theme_Publication()
+```
+# Within patch prevalence
+
+Both DO and DP species covered a greater proportion of patches as patch sized increased. Probabilistic simulations remained consistent across all patch sizes. High fecundity DP species tended to occupy almost the whole extent of a patch, particularly when patch size > 100. Low fecundity species only occupied a fraction of small patches, but continued to respond positively to increasing patch size. DO species on the other had showed increases up until  patches of ~100 cells, where the rate of cover increase slowed greatly.
+
+To show this trend a GAM model was fit with proportion of patch filled as the dependent variable and the log of patch area as the independent variable. 
+```{r}
+library(mgcv)
+out <- NULL
+for (species in c('EO_Species1','EO_Species2','DO_Species1','DO_Species2','DO_Species3','DO_Species4','DP_Species1','DP_Species2','DP_Species3','DP_Species4')){
+  m <- gam(prop_filled ~s(log(area)),data=dat85[(dat85$pa_count>0)&(dat85$area>5)&(dat85$area<400)&(dat85$species==species),])
+  pd <-partial(m,pred.var="area")
+  pd$species <- species
+  if (is.null(out)){
+    out <- pd
+  } else{
+    out <- rbind(out,pd)
+  }
+  
+}
+write.csv(out,'pdp_gam_85.csv') 
+```
+### High suitability patches
+```{r warning=FALSE, message=FALSE, fig.width = 12, fig.height=8}
+out <- read.csv('data/pdp_gam_75.csv')
+ggplot(data=out,aes(x=area,y=yhat,linetype=species,color=species))+
+  geom_line(size=1.2)+
+    scale_linetype_manual(values=c("dashed", "dashed","dashed", "dashed","solid", "solid","solid","solid","twodash", "twodash"))+
+  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+theme_Publication()+ylab("Proportion patch filled")+xlab("Patch area")
+```
+### Very high suitability patches
+```{r warning=FALSE, message=FALSE, fig.width = 12, fig.height=8}
+out <- read.csv('data/pdp_gam_85.csv')
+ggplot(data=out,aes(x=area,y=yhat,linetype=species,color=species))+
+  geom_line(size=1.2)+
+    scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","twodash", "twodash"))+
+  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+theme_Publication()+ylab("Proportion patch filled")+xlab("Patch area")
+```
+This is also shown in respect to a scatter plot of the data to give a better representation of the shape of the trends. Small patch sizes tend to have very high variability for all species. For example, if a patch of 5 cells has 4 occupied then proportion filled is 0.8. A change of occupancy of one cell results in a 20% change in the proportion filled.
+### High suitability patches
+```{r warning=FALSE, message=FALSE,fig.width = 12, fig.height=15}
+ggplot(data=dat[(dat$pa_count>0)&(dat$area>10)&(dat$area<400),],aes(x=area,y=prop_filled,))+
+  geom_point(color = 'grey',shape=20,alpha=0.1)+
+  geom_line(data=out,aes(x=area,y=yhat),color='red')+facet_wrap(vars(species),ncol=2)+theme_Publication()+ylab("Proportion patch filled")+xlab("Patch area")
+```
+### Very suitability patches
+```{r warning=FALSE, message=FALSE,fig.width = 12, fig.height=15}
+ggplot(data=dat85[(dat85$pa_count>0)&(dat85$area>5)&(dat85$area<400),],aes(x=area,y=prop_filled,))+
+  geom_point(color = 'grey',shape=20,alpha=0.1)+
+  geom_line(data=out,aes(x=area,y=yhat),color='black')+geom_smooth(color='red')+facet_wrap(vars(species),ncol=2)+theme_Publication()+ylab("Proportion patch filled")+xlab("Patch area")
+```
+# Out of patch prevlanence
+In DO and DP species, high dispersal probability and high fecundity species had a greater proportion of occupied cells outside of patches compared to low dispersal probability and low fecundity species. In EO species, the high prevalence species (EO_Species1) had a greater proportion of occupied cells outside of patches compared to EO_Species2. For all species, the proportion of occupied cells outside of habitat patches decreased with the increased availability of high and very high suitability habitat patches. This is due to the fixed landscape size, meaning as availability of high suitability patches increased, non-patch areas decreased. However, the rate of decrease in the proportion of occupied cells outside of habitat patches was lower for DP species than DO and EO species, which had the highest rate of decrease.
+```{r  message=FALSE, warning=FALSE, fig.width = 10, fig.height=12}
+ggplot(prev_ls75,aes(x=total_area,y=out_sum/(out_sum+patch_sum)))+
+  geom_point()+stat_smooth(method="lm")+stat_regline_equation(label.x=40000,label.y=0.75)+ facet_wrap(vars(species),ncol=2)+theme_Publication()+ylab("Proportion occurence outside patch")+xlab("Total area high suitability (high suitability patches)")
+ggplot(prev_ls85,aes(x=total_area,y=out_sum/(out_sum+patch_sum)))+
+  geom_point()+stat_smooth(method="lm")+stat_regline_equation(label.x=19000,label.y=0.9)+ facet_wrap(vars(species),ncol=2)+theme_Publication()+ylab("Proportion occurence outside patch")+xlab("Total area high suitability (very high suitability patches)")
+```
+
+
+
