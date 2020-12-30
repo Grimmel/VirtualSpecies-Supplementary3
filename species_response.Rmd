@@ -11,7 +11,7 @@ library(dplyr)
 library(ggplot2)
 library(ggpubr)
 library(reshape2)
-setwd("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial/Supplementary_3")
+setwd("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial")
 
 prevdat75 <- read.csv("data/prevalence_75.csv")
 prevdat85 <- read.csv("data/prevalence_85.csv")
@@ -61,7 +61,7 @@ theme_Publication <- function(base_size=14, base_family="Arial") {
 ```
 # Measured species response
 When evaluating the median proportion of cells occupied along the suitability gradient, curves tend to have a sigmoidal shape. Probabilistic species (EO) have very little variability around this shape, while simulations with dispersal and popultion (DP) have comparatively high variability. Dispersal only (DO) simulations have moderate variabilty.
-```{r message=FALSE, warning=FALSE, fig.width=10,fig.height=13}
+```{r message=FALSE, warning=FALSE, fig.width=10,fig.height=10,dpi=300}
 m <- dat %>% 
   group_by(species,break_pt) %>%
   summarise_at(vars(pa_prop), funs(median(., na.rm=TRUE)))
@@ -79,17 +79,20 @@ p1 <- ggplot(data=m[m$species %in% c('EO_Species1','EO_Species2','DO_Species1','
   scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
   scale_fill_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
   xlab('Habitat suitability')+
-  ylab('Proportion of occurence')+ylim(0,1)+ ggtitle("CA Species")+theme_Publication()+theme_Publication()+theme(plot.title = element_text(hjust = 0.01))
+  ylab('Proportion of occurence')+ylim(0,1)+ ggtitle("EO,DO Species")+theme_Publication()+theme_Publication()+theme(plot.title = element_text(hjust = 0.01))
 p3 <- ggplot(data=m[m$species %in% c('DP_Species1','DP_Species2','DP_Species3','DP_Species4'),], aes(x=break_pt, y=pa_prop, group=species)) +
   geom_line(aes(color=species),size=1)+
   geom_ribbon(aes(ymin = Q1, ymax = Q3,fill=species),alpha=0.3,linetype='solid')+
   scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7"))+
   scale_fill_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7"))+
   xlab('Habitat suitability')+
-  ylab('Proportion of occurence')+ylim(0,1) + ggtitle("IBM Species")+theme_Publication()+theme(plot.title = element_text(hjust = 0.01))
+  ylab('Proportion of occurence')+ylim(0,1) + ggtitle("DP Species")+theme_Publication()+theme(plot.title = element_text(hjust = 0.01))
 
 plotout <- ggarrange(p1,p3,common.legend=FALSE,ncol=1)
 plotout
+ggsave("species_response_8cm.png",plot=plotout,width=16,height=18,units="cm",dpi=300)
+ggsave("species_response_lg.png",plot=plotout,width=24,height=27,units="cm",dpi=300)
+
 ```
 ## Between landscape variability
 By plotting the average curve for each landscape we can get another view about how the measured response changes between landscape. Landscapes with larger mean patch size (area_mn) tended to have higher proportions of occurence along the middle ranges of the suitability gradient for DP and to a lesser extent DO species. As expected, there is no change for EO species. The low fecundity species (DP_species 3&4) tend to have greater variability between landscapes in the high suitability values compared to the high fecundity species.
@@ -263,17 +266,19 @@ m2 <- cor_species %>%
   summarise_at(vars('s5','s10','s15','s20','s25','s30','s35','s40','s45','s50'), funs(sd(., na.rm=TRUE)))
 df2 <- melt(m2,id.vars="species")
 names(m) <- c('species','variable','value')
-ggplot(data=m, aes(x=variable, y=value, group=species)) +
+moranplot <- ggplot(data=m, aes(x=variable, y=value, group=species)) +
   geom_line(aes(color=species,linetype=species),position=position_dodge(.2),size=1.1)+
   geom_point(aes(color=species,shape=species),position=position_dodge(.2),size=2.5) +
   geom_errorbar(aes(ymin = value - df2$value, ymax = value + df2$value,color=species),width = 1,position=position_dodge(.2),linetype='solid',alpha=0.8)+
   geom_hline(yintercept=0)+
-  scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","dotted", "dotted"))+
-  scale_shape_manual(values=c(16,16,16,16,17,17,17,17,15,15))+
-  scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
+  scale_linetype_manual(name= "Species",values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","dashed", "dotted"))+
+  scale_shape_manual(name= "Species",values=c(16,16,16,16,17,17,17,17,15,17))+
+  scale_colour_manual(name= "Species",values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
   xlab('Lag distance (Cells)')+
   ylab("Moran's I")+theme_Publication()+theme(legend.position = "bottom",legend.box="vertical")+
-   guides(linetype = guide_legend(ncol = 4, byrow = TRUE))
+   guides(linetype = guide_legend(ncol = 4, byrow = TRUE,title.position="top"))
+ggsave("morans_correlogram_8cm.png",plot=moranplot,width=16,height=14,units="cm",dpi=300)
+ggsave("morans_correlogram_lg.png",plot=moranplot,width=24,height=20,units="cm",dpi=300)
 ```
 
 While this trend is consistent for all landscapes, the strength of spatial autocorrelation does vary between landscapes.

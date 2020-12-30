@@ -9,7 +9,7 @@ output:
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
-setwd("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial/Supplementary_4")
+setwd("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial")
 
 dat <- read.csv("data/patches_measures75.csv")
 dat85 <- read.csv("data/patches_measures85.csv")
@@ -51,17 +51,17 @@ theme_Publication <- function(base_size=12, base_family="helvetica") {
 # Prevalence
 The amount of high suitability habitat varied between landscapes by chance, ranging from 2% – 36% (µ=16%, σ=6%). All species prevalence scaled linearly with the prevalence of high suitability cells, with high fecundity species having a steeper rate of change than other species (Fig S1, S2). However, the relative prevalence varied between species depending on simulation parameters. High fecundity DP species and DO species with high dispersal probability had higher prevalence than simulations with low fecundity and low dispersal probability.  
 ```{r message=FALSE, warning=FALSE, fig.width = 12, fig.height=8}
-prevalence75 <- read.csv("data/prevalence_75.csv")
-prevalence85 <- read.csv("data/prevalence_85.csv")
-landscape75 <- read.csv("data/landscape_metrics75.csv")
-landscape85 <- read.csv("data/landscape_metrics85.csv")
+prevalence75 <- read.csv("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial/data/prevalence_75.csv")
+prevalence85 <- read.csv("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial/data/prevalence_85.csv")
+landscape75 <- read.csv("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial/data/landscape_metrics75.csv")
+landscape85 <- read.csv("D:/SyncProjects/PhD/Chapters/RQ1/Submission/SupplementaryMaterial/data/landscape_metrics85.csv")
 prev_ls75 <- prevalence75 %>% full_join(landscape75,by=c("ls"="ls"))
 prev_ls85 <- prevalence85 %>% full_join(landscape85,by=c("ls"="ls"))
 
 prev_ls75 %>% ggplot(aes(y=prevalence,x=total_area/160000,color=species,linetype=species))+
   geom_point(aes(color=species,shape=species),size = 1)+
   geom_smooth(method='lm',se=FALSE,size=1.5)+
-  scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","twodash", "twodash"))+
+  scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","twodash", "dashed"))+
   scale_shape_manual(values=c(16,16,16,16,17,17,17,17,15,15))+
   scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
    ylab("Species prevalence") + xlab("Prevalence of very high suitability (>75)")+theme_Publication()
@@ -70,7 +70,7 @@ prev_ls75 %>% ggplot(aes(y=prevalence,x=total_area/160000,color=species,linetype
 prev_ls85 %>% ggplot(aes(y=prevalence,x=total_area/160000,color=species,linetype=species))+
   geom_point(aes(color=species,shape=species),size = 1)+
   geom_smooth(method='lm',se=FALSE,size=1.5)+
-  scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","twodash", "twodash"))+
+  scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","twodash", "dashed"))+
   scale_shape_manual(values=c(16,16,16,16,17,17,17,17,15,15))+
   scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+
    ylab("Species prevalence") + xlab("Prevalence of very high suitability (>85)")+theme_Publication()
@@ -134,7 +134,7 @@ write.csv(out,'pdp_gam_85.csv')
 out <- read.csv('data/pdp_gam_75.csv')
 ggplot(data=out,aes(x=area,y=yhat,linetype=species,color=species))+
   geom_line(size=1.2)+
-    scale_linetype_manual(values=c("dashed", "dashed","dashed", "dashed","solid", "solid","solid","solid","twodash", "twodash"))+
+    scale_linetype_manual(values=c("dashed", "dashed","dashed", "dashed","solid", "solid","solid","solid","twodash", "dashed"))+
   scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+theme_Publication()+ylab("Proportion patch filled")+xlab("Patch area")
 ```
 ### Very high suitability patches
@@ -142,7 +142,7 @@ ggplot(data=out,aes(x=area,y=yhat,linetype=species,color=species))+
 out <- read.csv('data/pdp_gam_85.csv')
 ggplot(data=out,aes(x=area,y=yhat,linetype=species,color=species))+
   geom_line(size=1.2)+
-    scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","twodash", "twodash"))+
+    scale_linetype_manual(values=c("dotted", "dotted","dotted", "dotted","solid", "solid","solid","solid","twodash", "dashed"))+
   scale_colour_manual(values = c("#D55E00", "#0072B2", "#009E73","#CC79A7","#D55E00", "#0072B2", "#009E73","#CC79A7","black","black"))+theme_Publication()+ylab("Proportion patch filled")+xlab("Patch area")
 ```
 This is also shown in respect to a scatter plot of the data to give a better representation of the shape of the trends. Small patch sizes tend to have very high variability for all species. For example, if a patch of 5 cells has 4 occupied then proportion filled is 0.8. A change of occupancy of one cell results in a 20% change in the proportion filled.

@@ -1,7 +1,9 @@
 include("ca.jl")
 using .CellularAutomata
 using DelimitedFiles
+using CSV
 using Profile
+using DataFrames
 function runSimulations()
     # Parameters
     landscapes = ("LLM","LMS","LLS","LMM","LSS")
@@ -38,3 +40,38 @@ function runSimulations()
         end
     end
 end
+
+
+function testEquilibriumPoint()
+    # Parameters
+    landscapes = ("LLM3","LMS10","LLS2","LMM2","LSS3")
+    simulationReplicates = 9 # 9 is the max, 10 total
+    speciesList = Dict("ca_species1"=>[0.6,2],
+                        "ca_species2"=>[0.6,4],
+                        "ca_species3"=>[0.8,2],
+                        "ca_species4"=>[0.8,4])
+    results = DataFrame(species=String[],landscape=String[],rep=Int64[],it=Int64[],numocc=Int64[])
+    for (species,params) in speciesList
+        for landscape in landscapes
+            for srep in 0:9
+                suit = readdlm("D:/PHDExperimentOutputs/SimLandscapes/suitability/"*landscape*"_suitability.asc",skipstart=6)
+                suit = suit ./100
+                ls_dimension = size(suit)
+                # Dispersal Parameters
+                dispersalProbability = params[1]
+                dispersalDistance = params[2]
+                n_iterations = 500
+                pa = ones(400,400)
+                pa_cart_index = CartesianIndices(pa)
+                simulationModel = OccurenceCellularAutomata(pa,pa_cart_index,suit,dispersalProbability,dispersalDistance)
+                for i in 1:n_iterations
+                    colonise(simulationModel)
+                    extinction(simulationModel)
+                    push!(results,[species,landscape,srep,i,sum(simulationModel.pa)])
+                end
+            end
+        end
+    end
+    CSV.write("D:/git/VirtualSpecies-Supplementary3/caequilibrium.csv", results)
+end
+testEquilibriumPoint()

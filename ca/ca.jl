@@ -23,10 +23,10 @@ function newPos(meanDistance::Float64,cartIdx::CartesianIndex)
     # Remember 1 = y, 2 = x
     x = Int(round(cos(deg2rad(angle))*distance,digits=0)) + cartIdx[2]
     y = Int(round(sin(deg2rad(angle))*distance,digits=0)) + cartIdx[1]
-    coord = Tuple(y::Int64,x::Int64)
+    coord = (y::Int64,x::Int64)
     return(coord)
 end
-function selectProportion(pa::Array{Float64},caIndex::Array{CartesianIndex},dispersalProbability::Float64)
+function selectProportion(pa::Matrix{Float64},caIndex::Matrix{CartesianIndex{2}},dispersalProbability::Float64)
     nPresences = Int(sum(pa))
     total = Array{CartesianIndex}(undef, nPresences)
     counter = 1
